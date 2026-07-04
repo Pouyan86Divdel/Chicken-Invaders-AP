@@ -1,5 +1,11 @@
+import UI.GameMain;
+import javax.swing.SwingUtilities;
+
 public class Main {
     public static void main(String[] args) {
-        System.out.println("hello world!");
+        SwingUtilities.invokeLater(() -> {
+            GameMain game = new GameMain();
+            game.setVisible(true);
+        });
     }
 }

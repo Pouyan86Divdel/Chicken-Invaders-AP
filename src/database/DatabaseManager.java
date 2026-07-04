@@ -30,4 +30,38 @@ public class DatabaseManager {
             System.out.println("Error creating table: " + e.getMessage());
         }
     }
+
+    public static boolean registerUser(String username, String password) {
+        String sql = "INSERT INTO users(username, password) VALUES(?, ?)";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.executeUpdate();
+            System.out.println("User " + username + " registered successfully.");
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Registration failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean loginUser(String username, String password) {
+        String sql = "SELECT password FROM users WHERE username = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                String storedPassword = rs.getString("password");
+                return storedPassword.equals(password);
+            }
+            return false;
+        } catch (SQLException e) {
+            System.out.println("Login error: " + e.getMessage());
+            return false;
+        }
+    }
+
 }

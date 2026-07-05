@@ -26,6 +26,10 @@ public class GameMain extends JFrame {
         mainPanel.add(mockGamePanel, "GamePanel");
         mainPanel.add(settingsPanel, "Settings");
         mainPanel.add(howToPlayPanel, "HowToPlay");
+        LoginPanel loginPanel = new LoginPanel(this);
+        RegisterPanel registerPanel = new RegisterPanel(this);
+        mainPanel.add(loginPanel, "LoginPanel");
+        mainPanel.add(registerPanel, "RegisterPanel");
         add(mainPanel);
         cardLayout.show(mainPanel, "MainMenu");
     }

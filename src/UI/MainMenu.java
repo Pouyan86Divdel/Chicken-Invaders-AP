@@ -22,7 +22,8 @@ public class MainMenu extends JPanel {
         settingsBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         howToPlayBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         exitBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        newGameBtn.addActionListener(e -> gameMain.changePanel("GamePanel"));
+//        newGameBtn.addActionListener(e -> gameMain.changePanel("GamePanel"));
+        newGameBtn.addActionListener(e -> gameMain.changePanel("LoginPanel"));
         settingsBtn.addActionListener(e -> gameMain.changePanel("Settings"));
         howToPlayBtn.addActionListener(e -> gameMain.changePanel("HowToPlay"));
         exitBtn.addActionListener(e -> System.exit(0));

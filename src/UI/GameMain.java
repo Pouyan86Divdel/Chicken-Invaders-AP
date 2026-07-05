@@ -14,6 +14,7 @@ public class GameMain extends JFrame {
         setResizable(false);
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
+        GamePanel gamePanel = new GamePanel(this);
         MainMenu mainMenu = new MainMenu(this);
         SettingsPanel settingsPanel = new SettingsPanel(this);
         HowToPlayPanel howToPlayPanel = new HowToPlayPanel(this);
@@ -23,7 +24,7 @@ public class GameMain extends JFrame {
         backFromGame.addActionListener(e -> changePanel("MainMenu"));
         mockGamePanel.add(backFromGame);
         mainPanel.add(mainMenu, "MainMenu");
-        mainPanel.add(mockGamePanel, "GamePanel");
+        mainPanel.add(gamePanel, "GamePanel");
         mainPanel.add(settingsPanel, "Settings");
         mainPanel.add(howToPlayPanel, "HowToPlay");
         LoginPanel loginPanel = new LoginPanel(this);
@@ -35,5 +36,12 @@ public class GameMain extends JFrame {
     }
     public void changePanel(String panelName) {
         cardLayout.show(mainPanel, panelName);
+        if (panelName.equals("GamePanel")) {
+            for (Component comp : mainPanel.getComponents()) {
+                if (comp instanceof UI.GamePanel) {
+                    comp.requestFocusInWindow();
+                }
+            }
+        }
     }
 }

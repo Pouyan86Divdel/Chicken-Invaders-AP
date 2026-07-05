@@ -1,6 +1,8 @@
 package UI;
 
 import models.Bullet;
+import models.Enemy;
+import models.NormalChicken;
 import models.Plane;
 
 import javax.swing.*;
@@ -17,6 +19,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private Timer gameTimer;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private java.util.List<Bullet> bullets = new ArrayList<Bullet>();
+    private java.util.List<Enemy> enemies = new java.util.ArrayList<>();
     public GamePanel(GameMain gameMain) {
         this.gameMain = gameMain;
         setBackground(Color.ORANGE);
@@ -24,6 +27,21 @@ public class GamePanel extends JPanel implements ActionListener {
         plane = new Plane(368, 500);
         addKeyListener(new MyKeyAdapter());
         gameTimer = new Timer(16, this);
+//        gameTimer.start();
+        for (int i = 0; i < 5; i++) {
+            int startX = 100 + (i * 120);
+            int startY = 50;
+            enemies.add(new NormalChicken(startX, startY));
+        }
+    }
+
+    public void startGame() {
+        enemies.clear();
+        for (int i = 0; i < 5; i++) {
+            int startX = 100 + (i * 120);
+            int startY = 50;
+            enemies.add(new NormalChicken(startX, startY));
+        }
         gameTimer.start();
     }
 
@@ -33,6 +51,9 @@ public class GamePanel extends JPanel implements ActionListener {
         plane.draw(g);
         for (int i = 0; i < bullets.size(); i++) {
             bullets.get(i).draw(g);
+        }
+        for (int i = 0; i < enemies.size(); i++) {
+            enemies.get(i).draw(g);
         }
     }
 
@@ -47,6 +68,14 @@ public class GamePanel extends JPanel implements ActionListener {
             b.move();
             if (b.getY() < 0) {
                 bullets.remove(i);
+                i--;
+            }
+        }
+        for (int i = 0; i < enemies.size(); i++) {
+            Enemy enemy = enemies.get(i);
+            enemy.move();
+            if (enemy.getY() > 600) {
+                enemies.remove(i);
                 i--;
             }
         }

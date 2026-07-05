@@ -6,6 +6,8 @@ import java.awt.*;
 public class GameMain extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
+    private GamePanel gamePanel;
+
     public GameMain() {
         setTitle("Chicken Invaders");
         setSize(800, 600);
@@ -14,7 +16,7 @@ public class GameMain extends JFrame {
         setResizable(false);
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
-        GamePanel gamePanel = new GamePanel(this);
+        gamePanel = new GamePanel(this);
         MainMenu mainMenu = new MainMenu(this);
         SettingsPanel settingsPanel = new SettingsPanel(this);
         HowToPlayPanel howToPlayPanel = new HowToPlayPanel(this);
@@ -34,6 +36,11 @@ public class GameMain extends JFrame {
         add(mainPanel);
         cardLayout.show(mainPanel, "MainMenu");
     }
+
+    public GamePanel getGamePanel() {
+        return this.gamePanel;
+    }
+
     public void changePanel(String panelName) {
         cardLayout.show(mainPanel, panelName);
         if (panelName.equals("GamePanel")) {

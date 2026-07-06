@@ -1,9 +1,6 @@
 package UI;
 
-import models.Bullet;
-import models.Enemy;
-import models.NormalChicken;
-import models.Plane;
+import models.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,6 +17,8 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private java.util.List<Bullet> bullets = new ArrayList<Bullet>();
     private java.util.List<Enemy> enemies = new java.util.ArrayList<>();
+    private java.util.List<models.Egg> eggs = new java.util.ArrayList<>();
+    private java.util.Random random = new java.util.Random();
     public GamePanel(GameMain gameMain) {
         this.gameMain = gameMain;
         setBackground(Color.ORANGE);
@@ -38,6 +37,7 @@ public class GamePanel extends JPanel implements ActionListener {
     public void startGame() {
         enemies.clear();
         bullets.clear();
+        eggs.clear();
         plane.setHealth(3);
         for (int i = 0; i < 5; i++) {
             int startX = 100 + (i * 120);
@@ -75,6 +75,17 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
             }
         }
+        for (int i = 0; i < eggs.size(); i++) {
+            Egg egg = eggs.get(i);
+            if (egg.getPos().intersects(plane.getPos())) {
+                plane.takeDamage(1);
+                eggs.remove(i);
+                i--;
+                if (plane.getHealth() <= 0) {
+                    gameTimer.stop();
+                }
+            }
+        }
     }
 
     @Override
@@ -86,6 +97,9 @@ public class GamePanel extends JPanel implements ActionListener {
         }
         for (int i = 0; i < enemies.size(); i++) {
             enemies.get(i).draw(g);
+        }
+        for (int i = 0; i < eggs.size(); i++) {
+            eggs.get(i).draw(g);
         }
         ///////////////
         g.setColor(Color.WHITE);
@@ -120,6 +134,27 @@ public class GamePanel extends JPanel implements ActionListener {
             enemy.move();
             if (enemy.getY() > 600) {
                 enemies.remove(i);
+                i--;
+            }
+        }
+        for (int i = 0; i < enemies.size(); i++) {
+            Enemy enemy = enemies.get(i);
+            enemy.move();
+            if (random.nextInt(100) == 99) { // 1% chance of shooting
+                int eggX = enemy.getX() + 24;
+                int eggY = enemy.getY() + 40;
+                eggs.add(new models.Egg(eggX, eggY));
+            }
+            if (enemy.getY() > 600) {
+                enemies.remove(i);
+                i--;
+            }
+        }
+        for (int i = 0; i < eggs.size(); i++) {
+            Egg egg = eggs.get(i);
+            egg.move();
+            if (egg.getY() > 600) {
+                eggs.remove(i);
                 i--;
             }
         }

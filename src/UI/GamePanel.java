@@ -37,6 +37,8 @@ public class GamePanel extends JPanel implements ActionListener {
 
     public void startGame() {
         enemies.clear();
+        bullets.clear();
+        plane.setHealth(3);
         for (int i = 0; i < 5; i++) {
             int startX = 100 + (i * 120);
             int startY = 50;
@@ -62,6 +64,17 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
             }
         }
+        for (int i = 0; i < enemies.size(); i++) {
+            Enemy e = enemies.get(i);
+            if (plane.getPos().intersects(e.getPos())) {
+                plane.takeDamage(1);
+                enemies.remove(i);
+                i--;
+                if (plane.getHealth() <= 0) {
+                    gameTimer.stop();
+                }
+            }
+        }
     }
 
     @Override
@@ -73,6 +86,18 @@ public class GamePanel extends JPanel implements ActionListener {
         }
         for (int i = 0; i < enemies.size(); i++) {
             enemies.get(i).draw(g);
+        }
+        ///////////////
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 18));
+        g.drawString("Lives: " + plane.getHealth(), 20, 30);
+        if (plane.getHealth() <= 0) {
+            g.setColor(Color.RED);
+            g.setFont(new Font("Arial", Font.BOLD, 50));
+            g.drawString("GAME OVER", 250, 300);
+            g.setFont(new Font("Arial", Font.PLAIN, 20));
+            g.setColor(Color.WHITE);
+            g.drawString("Press ESC to return to Main Menu", 240, 350);
         }
     }
 
@@ -114,6 +139,11 @@ public class GamePanel extends JPanel implements ActionListener {
                 int bulletX = plane.getX() + 24;
                 int bulletY = plane.getY();
                 bullets.add(new Bullet(bulletX, bulletY));
+            }
+            if (key == KeyEvent.VK_ESCAPE) {
+                if (plane.getHealth() <= 0) {
+                    gameMain.changePanel("MainMenu");
+                }
             }
         }
 

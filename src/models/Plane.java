@@ -5,6 +5,7 @@ import java.awt.*;
 public class Plane {
     private int x, y;
     private int speed = 5;
+    private int health = 3;
     private Image image;
 
     public Plane(int startX, int startY) {
@@ -36,6 +37,22 @@ public class Plane {
         if (y < 600 - 64) {
             y += speed;
         }
+    }
+
+    public Rectangle getPos() {
+        return new Rectangle(x, y, 64, 64);
+    }
+
+    public void takeDamage(int damage) {
+        this.health -= damage;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public void setHealth(int health) {
+        this.health = health;
     }
 
     public void draw(Graphics g) {

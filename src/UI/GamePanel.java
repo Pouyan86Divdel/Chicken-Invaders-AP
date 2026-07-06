@@ -45,6 +45,25 @@ public class GamePanel extends JPanel implements ActionListener {
         gameTimer.start();
     }
 
+    private void checkCollision() {
+        for (int i = 0; i < enemies.size(); i++) {
+            Enemy e = enemies.get(i);
+            for (int j = 0; j < bullets.size(); j++) {
+                Bullet b = bullets.get(j);
+                if (e.getPos().intersects(b.getPos())) {
+                    bullets.remove(j);
+                    j--;
+                    e.takeDamage(1);
+                    if (e.getHealth() <= 0) {
+                        enemies.remove(i);
+                        i--;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -79,6 +98,7 @@ public class GamePanel extends JPanel implements ActionListener {
                 i--;
             }
         }
+        checkCollision();
         repaint();
     }
 

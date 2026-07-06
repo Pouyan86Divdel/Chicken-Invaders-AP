@@ -25,6 +25,10 @@ public abstract class Enemy {
         this.health -= damage;
     }
 
+    public Rectangle getPos() {
+        return new Rectangle(x, y, 48, 48);
+    }
+
     public int getX() { return x; }
     public int getY() { return y; }
     public int getHealth() { return health; }

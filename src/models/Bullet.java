@@ -18,6 +18,10 @@ public class Bullet {
         y -= speed;
     }
 
+    public Rectangle getPos() {
+        return new Rectangle(x, y, 16, 32);
+    }
+
     public void draw(Graphics g) {
         g.drawImage(image, x, y, 16, 32, null);
     }

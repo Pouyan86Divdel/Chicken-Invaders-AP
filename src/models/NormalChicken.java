@@ -15,4 +15,7 @@ public class NormalChicken extends Enemy {
     public void move() {
         y += speed;
     }
+
+    @Override
+    public int getScore() { return 10; }
 }

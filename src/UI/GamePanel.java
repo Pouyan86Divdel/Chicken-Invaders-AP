@@ -15,6 +15,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private Plane plane;
     private Timer gameTimer;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
+    private int score = 0;
     private java.util.List<Bullet> bullets = new ArrayList<Bullet>();
     private java.util.List<Enemy> enemies = new java.util.ArrayList<>();
     private java.util.List<models.Egg> eggs = new java.util.ArrayList<>();
@@ -38,6 +39,7 @@ public class GamePanel extends JPanel implements ActionListener {
         enemies.clear();
         bullets.clear();
         eggs.clear();
+        score = 0;
         plane.setHealth(3);
         for (int i = 0; i < 5; i++) {
             int startX = 100 + (i * 120);
@@ -59,6 +61,7 @@ public class GamePanel extends JPanel implements ActionListener {
                     if (e.getHealth() <= 0) {
                         enemies.remove(i);
                         i--;
+                        score += e.getScore();
                     }
                     break;
                 }
@@ -105,6 +108,7 @@ public class GamePanel extends JPanel implements ActionListener {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 18));
         g.drawString("Lives: " + plane.getHealth(), 20, 30);
+        g.drawString("Score: " + score, 650, 30);
         if (plane.getHealth() <= 0) {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 50));

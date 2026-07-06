@@ -17,6 +17,8 @@ public abstract class Enemy {
 
     public abstract void move();
 
+    public abstract int getScore();
+
     public void draw(Graphics g) {
         g.drawImage(image, x, y, 48, 48, null);
     }

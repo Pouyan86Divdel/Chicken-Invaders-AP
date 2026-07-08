@@ -30,8 +30,27 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private void generateGrid() {
         gridCells.clear();
-        int hitCounter = 2;
+        int hitCounter = 1;
         String enemyType = "Normal";
+
+        if (currentLevel == 1) {
+            hitCounter = 1;
+            enemyType = "Normal";
+            gridSpeedX = 2;
+            gridStepY = 20;
+        } else if (currentLevel == 2) {
+            hitCounter = 1;
+            enemyType = "Fast";
+            gridSpeedX = 4;
+            gridStepY = 25;
+        } else if (currentLevel == 3) {
+            hitCounter = 2;
+            enemyType = "Zigzag";
+            gridSpeedX = 3;
+            gridStepY = 30;
+        }
+
+        gridDirection = 1;
 
         for (int row = 0; row < 5; row++) {
             for (int col = 0; col < 8; col++) {
@@ -84,8 +103,8 @@ public class GamePanel extends JPanel implements ActionListener {
                     i--;
                     enemy.takeDamage(1);
                     if (enemy.getHealth() <= 0) {
+                        score += enemy.getScore();
                         cell.enemyKilled();
-                        score += 10;
                     }
                     break;
                 }
@@ -112,6 +131,30 @@ public class GamePanel extends JPanel implements ActionListener {
                 if (plane.getHealth() <= 0) {
                     gameTimer.stop();
                 }
+            }
+        }
+
+        checkLevelUp();
+    }
+
+    private void checkLevelUp() {
+        boolean levelCleared = true;
+        for (models.Cell cell : gridCells) {
+            if (cell.getHitCounter() > 0) {
+                levelCleared = false;
+                break;
+            }
+        }
+
+        if (levelCleared) {
+            score += 200;
+            bullets.clear();
+            eggs.clear();
+            if (currentLevel < 3) {
+                currentLevel++;
+                generateGrid();
+            } else {
+                gameTimer.stop();
             }
         }
     }
@@ -210,13 +253,21 @@ public class GamePanel extends JPanel implements ActionListener {
         frameCounter++;
         if (frameCounter >= 180) {
             frameCounter = 0;
+
+            int shootChance = 3;
+            if (currentLevel == 2) {
+                shootChance = 1;
+            } else if (currentLevel == 3) {
+                shootChance = 2;
+            }
+
             for (models.Cell cell : gridCells) {
                 Enemy enemy = cell.getCurrentEnemy();
                 if (enemy != null && !enemy.isSpawning()) {
-                    if (random.nextInt(10) < 3) {
+                    if (random.nextInt(10) < shootChance) {
                         int eggX = enemy.getX() + 24;
                         int eggY = enemy.getY() + 40;
-                        eggs.add(new models.Egg(eggX, eggY));
+                        eggs.add(new Egg(eggX, eggY));
                     }
                 }
             }

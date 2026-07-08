@@ -24,15 +24,15 @@ public class Cell {
     public void spawnEnemy() {
         if (hitCounter > 0) {
             switch (enemyType) {
-//                case "Fast":
-//                    currentEnemy = new FastChicken(x, y);
-//                    break;
-//                case "Zigzag":
-//                    currentEnemy = new ZigzagChicken(x, y);
-//                    break;
-//                case "Shooter":
-//                    currentEnemy = new ShooterChicken(x, y);
-//                    break;
+                case "Fast":
+                    currentEnemy = new FastChicken(x, y);
+                    break;
+                case "Zigzag":
+                    currentEnemy = new ZigzagChicken(x, y);
+                    break;
+                case "Shooter":
+                    currentEnemy = new ShooterChicken(x, y);
+                    break;
                 default:
                     currentEnemy = new NormalChicken(x, y);
                     break;
@@ -57,8 +57,8 @@ public class Cell {
         this.y += deltaY;
         if (currentEnemy != null) {
             if (!currentEnemy.isSpawning()) {
-                currentEnemy.setX(this.x);
-                currentEnemy.setY(this.y);
+                currentEnemy.x = this.x;
+                currentEnemy.y = this.y;
             }
         }
     }

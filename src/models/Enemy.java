@@ -7,6 +7,36 @@ public abstract class Enemy {
     protected int speed;
     protected int health;
     protected Image image;
+    private int targetX, targetY;
+    private boolean isSpawning = false;
+
+    public void startSpawnAnimation(int startX, int startY, int targetX, int targetY) {
+        this.x = startX;
+        this.y = startY;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.isSpawning = true;
+    }
+
+    public void updateSpawnMovement() {
+        if (!isSpawning) return;
+        int speed = 6;
+        if (x < targetX)
+            x = Math.min(x + speed, targetX);
+        else if (x > targetX)
+            x = Math.max(x - speed, targetX);
+        if (y < targetY)
+            y = Math.min(y + speed, targetY);
+        else if (y > targetY)
+            y = Math.max(y - speed, targetY);
+        if (x == targetX && y == targetY) {
+            isSpawning = false;
+        }
+    }
+
+    public boolean isSpawning() {
+        return isSpawning;
+    }
 
     public Enemy(int x, int y, int speed, int health) {
         this.x = x;

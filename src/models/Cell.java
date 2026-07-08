@@ -37,6 +37,11 @@ public class Cell {
                     currentEnemy = new NormalChicken(x, y);
                     break;
             }
+
+            int startX = (Math.random() < 0.5) ? -50 : 850;
+            int startY = -50;
+
+            currentEnemy.startSpawnAnimation(startX, startY, this.x, this.y);
         } else {
             currentEnemy = null;
         }
@@ -51,8 +56,10 @@ public class Cell {
         this.x += deltaX;
         this.y += deltaY;
         if (currentEnemy != null) {
-            currentEnemy.setX(this.x);
-            currentEnemy.setY(this.y);
+            if (!currentEnemy.isSpawning()) {
+                currentEnemy.setX(this.x);
+                currentEnemy.setY(this.y);
+            }
         }
     }
 

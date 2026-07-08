@@ -21,6 +21,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private java.util.List<models.Egg> eggs = new java.util.ArrayList<>();
     private java.util.Random random = new java.util.Random();
     private java.util.List<models.Cell> gridCells = new java.util.ArrayList<>();
+    private int frameCounter = 0;
     private int currentLevel = 1;
     private int gridSpeedX = 2;
     private int gridDirection = 1;
@@ -30,9 +31,10 @@ public class GamePanel extends JPanel implements ActionListener {
         gridCells.clear();
         int hitCounter = 2;
         String enemyType = "Normal";
-        for (int r = 0; r < 5; r++) {
-            for (int c = 0; c < 8; c++) {
-                gridCells.add(new Cell(r, c, hitCounter, enemyType));
+
+        for (int row = 0; row < 5; row++) {
+            for (int col = 0; col < 8; col++) {
+                gridCells.add(new models.Cell(row, col, hitCounter, enemyType));
             }
         }
     }
@@ -169,7 +171,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
         for (models.Cell cell : gridCells) {
             Enemy enemy = cell.getCurrentEnemy();
-            if (enemy != null) {
+            if (enemy != null && !enemy.isSpawning()) {
                 if ((enemy.getX() + deltaX > 750 && gridDirection == 1) ||
                         (enemy.getX() + deltaX < 10 && gridDirection == -1)) {
                     hitEdge = true;
@@ -193,17 +195,28 @@ public class GamePanel extends JPanel implements ActionListener {
 
         for (models.Cell cell : gridCells) {
             Enemy enemy = cell.getCurrentEnemy();
-            if (enemy != null) {
-                if (random.nextInt(1000) < 5) {
-                    int eggX = enemy.getX() + 24;
-                    int eggY = enemy.getY() + 40;
-                    eggs.add(new models.Egg(eggX, eggY));
+            if (enemy != null && enemy.isSpawning()) {
+                enemy.updateSpawnMovement();
+            }
+        }
+
+        frameCounter++;
+        if (frameCounter >= 180) {
+            frameCounter = 0;
+            for (models.Cell cell : gridCells) {
+                Enemy enemy = cell.getCurrentEnemy();
+                if (enemy != null && !enemy.isSpawning()) {
+                    if (random.nextInt(10) < 3) {
+                        int eggX = enemy.getX() + 24;
+                        int eggY = enemy.getY() + 40;
+                        eggs.add(new models.Egg(eggX, eggY));
+                    }
                 }
             }
         }
 
         for (int i = 0; i < eggs.size(); i++) {
-            Egg egg = eggs.get(i);
+            models.Egg egg = eggs.get(i);
             egg.move();
             if (egg.getY() > 600) {
                 eggs.remove(i);

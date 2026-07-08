@@ -40,7 +40,7 @@ public class Plane {
     }
 
     public Rectangle getPos() {
-        return new Rectangle(x, y, 64, 64);
+        return new Rectangle(x, y, 54, 54);
     }
 
     public void takeDamage(int damage) {

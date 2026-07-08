@@ -24,7 +24,7 @@ public class Egg {
     }
 
     public Rectangle getPos() {
-        return new Rectangle(x, y, 36, 36);
+        return new Rectangle(x, y, 26, 26);
     }
 
     public int getY() { return y; }

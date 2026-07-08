@@ -16,6 +16,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private Timer gameTimer;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private int score = 0;
+    private Image backgroundImage;
     private java.util.List<Bullet> bullets = new ArrayList<Bullet>();
     private java.util.List<Enemy> enemies = new java.util.ArrayList<>();
     private java.util.List<models.Egg> eggs = new java.util.ArrayList<>();
@@ -42,6 +43,7 @@ public class GamePanel extends JPanel implements ActionListener {
     public GamePanel(GameMain gameMain) {
         this.gameMain = gameMain;
         setBackground(Color.ORANGE);
+        backgroundImage = new ImageIcon("assets/images/background/background.jpg").getImage();
         setFocusable(true);
         plane = new Plane(368, 500);
         addKeyListener(new MyKeyAdapter());
@@ -117,6 +119,11 @@ public class GamePanel extends JPanel implements ActionListener {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, 800, 600, this);
+        }
+
         plane.draw(g);
 
         for (int i = 0; i < bullets.size(); i++) {

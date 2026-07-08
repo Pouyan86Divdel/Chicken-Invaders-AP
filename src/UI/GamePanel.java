@@ -20,6 +20,23 @@ public class GamePanel extends JPanel implements ActionListener {
     private java.util.List<Enemy> enemies = new java.util.ArrayList<>();
     private java.util.List<models.Egg> eggs = new java.util.ArrayList<>();
     private java.util.Random random = new java.util.Random();
+    private java.util.List<models.Cell> gridCells = new java.util.ArrayList<>();
+    private int currentLevel = 1;
+    private int gridSpeedX = 2;
+    private int gridDirection = 1;
+    private int gridStepY = 20;
+
+    private void generateGrid() {
+        gridCells.clear();
+        int hitCounter = 2;
+        String enemyType = "Normal";
+        for (int r = 0; r < 5; r++) {
+            for (int c = 0; c < 8; c++) {
+                gridCells.add(new Cell(r, c, hitCounter, enemyType));
+            }
+        }
+    }
+
     public GamePanel(GameMain gameMain) {
         this.gameMain = gameMain;
         setBackground(Color.ORANGE);
@@ -39,47 +56,51 @@ public class GamePanel extends JPanel implements ActionListener {
         enemies.clear();
         bullets.clear();
         eggs.clear();
+        currentLevel = 1;
+        gridDirection = 1;
+        gridSpeedX = 2;
         score = 0;
         plane.setHealth(3);
-        for (int i = 0; i < 5; i++) {
-            int startX = 100 + (i * 120);
-            int startY = 50;
-            enemies.add(new NormalChicken(startX, startY));
-        }
+//        for (int i = 0; i < 5; i++) {
+//            int startX = 100 + (i * 120);
+//            int startY = 50;
+//            enemies.add(new NormalChicken(startX, startY));
+//        }
+        generateGrid();
         gameTimer.start();
     }
 
     private void checkCollision() {
-        for (int i = 0; i < enemies.size(); i++) {
-            Enemy e = enemies.get(i);
-            for (int j = 0; j < bullets.size(); j++) {
-                Bullet b = bullets.get(j);
-                if (e.getPos().intersects(b.getPos())) {
-                    bullets.remove(j);
-                    j--;
-                    e.takeDamage(1);
-                    if (e.getHealth() <= 0) {
-                        enemies.remove(i);
-                        i--;
-                        score += e.getScore();
+        for (int i = 0; i < bullets.size(); i++) {
+            Bullet b = bullets.get(i);
+            for (models.Cell cell : gridCells) {
+                Enemy enemy = cell.getCurrentEnemy();
+                if (enemy != null && b.getPos().intersects(enemy.getPos())) {
+                    bullets.remove(i);
+                    i--;
+                    enemy.takeDamage(1);
+                    if (enemy.getHealth() <= 0) {
+                        cell.enemyKilled();
+                        score += 10;
                     }
                     break;
                 }
             }
         }
-        for (int i = 0; i < enemies.size(); i++) {
-            Enemy e = enemies.get(i);
-            if (plane.getPos().intersects(e.getPos())) {
+
+        for (models.Cell cell : gridCells) {
+            Enemy enemy = cell.getCurrentEnemy();
+            if (enemy != null && plane.getPos().intersects(enemy.getPos())) {
                 plane.takeDamage(1);
-                enemies.remove(i);
-                i--;
+                cell.enemyKilled();
                 if (plane.getHealth() <= 0) {
                     gameTimer.stop();
                 }
             }
         }
+
         for (int i = 0; i < eggs.size(); i++) {
-            Egg egg = eggs.get(i);
+            models.Egg egg = eggs.get(i);
             if (egg.getPos().intersects(plane.getPos())) {
                 plane.takeDamage(1);
                 eggs.remove(i);
@@ -95,20 +116,28 @@ public class GamePanel extends JPanel implements ActionListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         plane.draw(g);
+
         for (int i = 0; i < bullets.size(); i++) {
             bullets.get(i).draw(g);
         }
-        for (int i = 0; i < enemies.size(); i++) {
-            enemies.get(i).draw(g);
+
+        for (models.Cell cell : gridCells) {
+            Enemy enemy = cell.getCurrentEnemy();
+            if (enemy != null) {
+                enemy.draw(g);
+            }
         }
+
         for (int i = 0; i < eggs.size(); i++) {
             eggs.get(i).draw(g);
         }
-        ///////////////
+
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 18));
         g.drawString("Lives: " + plane.getHealth(), 20, 30);
         g.drawString("Score: " + score, 650, 30);
+        g.drawString("Level: " + currentLevel, 370, 30);
+
         if (plane.getHealth() <= 0) {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 50));
@@ -125,6 +154,7 @@ public class GamePanel extends JPanel implements ActionListener {
         if (rightPressed) plane.moveRight();
         if (upPressed) plane.moveUp();
         if (downPressed) plane.moveDown();
+
         for (int i = 0; i < bullets.size(); i++) {
             Bullet b = bullets.get(i);
             b.move();
@@ -133,27 +163,45 @@ public class GamePanel extends JPanel implements ActionListener {
                 i--;
             }
         }
-        for (int i = 0; i < enemies.size(); i++) {
-            Enemy enemy = enemies.get(i);
-            enemy.move();
-            if (enemy.getY() > 600) {
-                enemies.remove(i);
-                i--;
+
+        boolean hitEdge = false;
+        int deltaX = gridSpeedX * gridDirection;
+
+        for (models.Cell cell : gridCells) {
+            Enemy enemy = cell.getCurrentEnemy();
+            if (enemy != null) {
+                if ((enemy.getX() + deltaX > 750 && gridDirection == 1) ||
+                        (enemy.getX() + deltaX < 10 && gridDirection == -1)) {
+                    hitEdge = true;
+                    break;
+                }
             }
         }
-        for (int i = 0; i < enemies.size(); i++) {
-            Enemy enemy = enemies.get(i);
-            enemy.move();
-            if (random.nextInt(100) == 99) { // 1% chance of shooting
-                int eggX = enemy.getX() + 24;
-                int eggY = enemy.getY() + 40;
-                eggs.add(new models.Egg(eggX, eggY));
-            }
-            if (enemy.getY() > 600) {
-                enemies.remove(i);
-                i--;
+
+        int actualDeltaX = deltaX;
+        int actualDeltaY = 0;
+
+        if (hitEdge) {
+            gridDirection *= -1;
+            actualDeltaX = 0;
+            actualDeltaY = gridStepY;
+        }
+
+        for (models.Cell cell : gridCells) {
+            cell.updatePosition(actualDeltaX, actualDeltaY);
+        }
+
+        for (models.Cell cell : gridCells) {
+            Enemy enemy = cell.getCurrentEnemy();
+            if (enemy != null) {
+                if (random.nextInt(1000) < 5) {
+                    int eggX = enemy.getX() + 24;
+                    int eggY = enemy.getY() + 40;
+                    eggs.add(new models.Egg(eggX, eggY));
+                }
             }
         }
+
         for (int i = 0; i < eggs.size(); i++) {
             Egg egg = eggs.get(i);
             egg.move();
@@ -162,6 +210,7 @@ public class GamePanel extends JPanel implements ActionListener {
                 i--;
             }
         }
+
         checkCollision();
         repaint();
     }

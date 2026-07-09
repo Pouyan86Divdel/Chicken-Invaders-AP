@@ -17,11 +17,13 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private int score = 0;
     private Image backgroundImage;
+    private int freezeTicks = 0;
     private java.util.List<Bullet> bullets = new ArrayList<Bullet>();
     private java.util.List<Enemy> enemies = new java.util.ArrayList<>();
     private java.util.List<models.Egg> eggs = new java.util.ArrayList<>();
     private java.util.Random random = new java.util.Random();
     private java.util.List<models.Cell> gridCells = new java.util.ArrayList<>();
+    private java.util.List<models.PowerUp> powerUps = new java.util.ArrayList<>();
     private int frameCounter = 0;
     private int currentLevel = 1;
     private int gridSpeedX = 2;
@@ -84,6 +86,7 @@ public class GamePanel extends JPanel implements ActionListener {
         gridSpeedX = 2;
         score = 0;
         plane.setHealth(3);
+        plane.resetFireLevel();
 //        for (int i = 0; i < 5; i++) {
 //            int startX = 100 + (i * 120);
 //            int startY = 50;
@@ -104,6 +107,13 @@ public class GamePanel extends JPanel implements ActionListener {
                     enemy.takeDamage(1);
                     if (enemy.getHealth() <= 0) {
                         score += enemy.getScore();
+
+                        if (Math.random() < 0.20) {
+                            String[] types = {"AddFire", "RapidFire", "ExtraLife", "Shield", "FreezeBomb"};
+                            String randomType = types[(int)(Math.random() * types.length)];
+                            powerUps.add(new models.PowerUp(enemy.getX(), enemy.getY(), randomType));
+                        }
+
                         cell.enemyKilled();
                     }
                     break;
@@ -131,6 +141,33 @@ public class GamePanel extends JPanel implements ActionListener {
                 if (plane.getHealth() <= 0) {
                     gameTimer.stop();
                 }
+            }
+        }
+
+        for (int i = 0; i < powerUps.size(); i++) {
+            models.PowerUp p = powerUps.get(i);
+            if (p.getPos().intersects(plane.getPos())) {
+                switch (p.getType()) {
+                    case "ExtraLife":
+                        if (plane.getHealth() < 5) {
+                            plane.setHealth(plane.getHealth() + 1);
+                        }
+                        break;
+                    case "AddFire":
+                        plane.incrementFireLevel();
+                        break;
+                    case "RapidFire":
+                        plane.activateRapidFire();
+                        break;
+                    case "Shield":
+                        plane.activateShield();
+                        break;
+                    case "FreezeBomb":
+                        this.activateFreezeBomb();
+                        break;
+                }
+                powerUps.remove(i);
+                i--;
             }
         }
 
@@ -184,6 +221,10 @@ public class GamePanel extends JPanel implements ActionListener {
             eggs.get(i).draw(g);
         }
 
+        for (int i = 0; i < powerUps.size(); i++) {
+            powerUps.get(i).draw(g);
+        }
+
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 18));
         g.drawString("Lives: " + plane.getHealth(), 20, 30);
@@ -207,6 +248,11 @@ public class GamePanel extends JPanel implements ActionListener {
         if (upPressed) plane.moveUp();
         if (downPressed) plane.moveDown();
 
+        plane.updateTimers();
+        if (freezeTicks > 0) {
+            freezeTicks--;
+        }
+
         for (int i = 0; i < bullets.size(); i++) {
             Bullet b = bullets.get(i);
             b.move();
@@ -216,68 +262,79 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         }
 
-        boolean hitEdge = false;
-        int deltaX = gridSpeedX * gridDirection;
-
-        for (models.Cell cell : gridCells) {
-            Enemy enemy = cell.getCurrentEnemy();
-            if (enemy != null && !enemy.isSpawning()) {
-                if ((enemy.getX() + deltaX > 750 && gridDirection == 1) ||
-                        (enemy.getX() + deltaX < 10 && gridDirection == -1)) {
-                    hitEdge = true;
-                    break;
-                }
-            }
-        }
-
-        int actualDeltaX = deltaX;
-        int actualDeltaY = 0;
-
-        if (hitEdge) {
-            gridDirection *= -1;
-            actualDeltaX = 0;
-            actualDeltaY = gridStepY;
-        }
-
-        for (models.Cell cell : gridCells) {
-            cell.updatePosition(actualDeltaX, actualDeltaY);
-        }
-
-        for (models.Cell cell : gridCells) {
-            Enemy enemy = cell.getCurrentEnemy();
-            if (enemy != null && enemy.isSpawning()) {
-                enemy.updateSpawnMovement();
-            }
-        }
-
-        frameCounter++;
-        if (frameCounter >= 180) {
-            frameCounter = 0;
-
-            int shootChance = 3;
-            if (currentLevel == 2) {
-                shootChance = 1;
-            } else if (currentLevel == 3) {
-                shootChance = 2;
-            }
+        if (freezeTicks <= 0) {
+            boolean hitEdge = false;
+            int deltaX = gridSpeedX * gridDirection;
 
             for (models.Cell cell : gridCells) {
                 Enemy enemy = cell.getCurrentEnemy();
                 if (enemy != null && !enemy.isSpawning()) {
-                    if (random.nextInt(10) < shootChance) {
-                        int eggX = enemy.getX() + 24;
-                        int eggY = enemy.getY() + 40;
-                        eggs.add(new Egg(eggX, eggY));
+                    if ((enemy.getX() + deltaX > 750 && gridDirection == 1) ||
+                            (enemy.getX() + deltaX < 10 && gridDirection == -1)) {
+                        hitEdge = true;
+                        break;
                     }
+                }
+            }
+
+            int actualDeltaX = deltaX;
+            int actualDeltaY = 0;
+
+            if (hitEdge) {
+                gridDirection *= -1;
+                actualDeltaX = 0;
+                actualDeltaY = gridStepY;
+            }
+
+            for (models.Cell cell : gridCells) {
+                cell.updatePosition(actualDeltaX, actualDeltaY);
+            }
+
+            for (models.Cell cell : gridCells) {
+                Enemy enemy = cell.getCurrentEnemy();
+                if (enemy != null && enemy.isSpawning()) {
+                    enemy.updateSpawnMovement();
+                }
+            }
+
+            frameCounter++;
+            if (frameCounter >= 180) {
+                frameCounter = 0;
+
+                int shootChance = 3;
+                if (currentLevel == 2) {
+                    shootChance = 1;
+                } else if (currentLevel == 3) {
+                    shootChance = 2;
+                }
+
+                for (models.Cell cell : gridCells) {
+                    Enemy enemy = cell.getCurrentEnemy();
+                    if (enemy != null && !enemy.isSpawning()) {
+                        if (random.nextInt(10) < shootChance) {
+                            int eggX = enemy.getX() + 24;
+                            int eggY = enemy.getY() + 40;
+                            eggs.add(new Egg(eggX, eggY));
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < eggs.size(); i++) {
+                models.Egg egg = eggs.get(i);
+                egg.move();
+                if (egg.getY() > 600) {
+                    eggs.remove(i);
+                    i--;
                 }
             }
         }
 
-        for (int i = 0; i < eggs.size(); i++) {
-            models.Egg egg = eggs.get(i);
-            egg.move();
-            if (egg.getY() > 600) {
-                eggs.remove(i);
+        for (int i = 0; i < powerUps.size(); i++) {
+            models.PowerUp p = powerUps.get(i);
+            p.move();
+            if (p.getY() > 600) {
+                powerUps.remove(i);
                 i--;
             }
         }
@@ -295,9 +352,20 @@ public class GamePanel extends JPanel implements ActionListener {
             if (key == KeyEvent.VK_UP || key == KeyEvent.VK_W) upPressed = true;
             if (key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) downPressed = true;
             if (key == KeyEvent.VK_SPACE) {
-                int bulletX = plane.getX() + 24;
-                int bulletY = plane.getY();
-                bullets.add(new Bullet(bulletX, bulletY));
+                int level = plane.getFireLevel();
+                int pX = plane.getX();
+                int pY = plane.getY();
+
+                if (level == 1) {
+                    bullets.add(new Bullet(pX + 24, pY));
+                } else if (level == 2) {
+                    bullets.add(new Bullet(pX + 10, pY));
+                    bullets.add(new Bullet(pX + 38, pY));
+                } else if (level == 3) {
+                    bullets.add(new Bullet(pX + 24, pY));
+                    bullets.add(new Bullet(pX + 6, pY));
+                    bullets.add(new Bullet(pX + 42, pY));
+                }
             }
             if (key == KeyEvent.VK_ESCAPE) {
                 if (plane.getHealth() <= 0) {
@@ -314,5 +382,9 @@ public class GamePanel extends JPanel implements ActionListener {
             if (key == KeyEvent.VK_UP || key == KeyEvent.VK_W) upPressed = false;
             if (key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) downPressed = false;
         }
+    }
+
+    public void activateFreezeBomb() {
+        this.freezeTicks = 3 * 60;
     }
 }

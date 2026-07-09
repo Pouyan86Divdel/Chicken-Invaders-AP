@@ -107,6 +107,7 @@ public class GamePanel extends JPanel implements ActionListener {
                     bullets.remove(i);
                     i--;
                     enemy.takeDamage(1);
+                    sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
                     if (enemy.getHealth() <= 0) {
                         score += enemy.getScore();
 
@@ -130,6 +131,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 cell.enemyKilled();
                 if (plane.getHealth() <= 0) {
                     gameTimer.stop();
+                    sound.SoundManager.stopBGM();
+                    sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
                     String currentUsername = gameMain.getCurrentUsername();
                     database.DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
                 }
@@ -144,6 +147,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 i--;
                 if (plane.getHealth() <= 0) {
                     gameTimer.stop();
+                    sound.SoundManager.stopBGM();
+                    sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
                     String currentUsername = gameMain.getCurrentUsername();
                     databaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
                 }
@@ -372,6 +377,7 @@ public class GamePanel extends JPanel implements ActionListener {
                     bullets.add(new Bullet(pX + 6, pY));
                     bullets.add(new Bullet(pX + 42, pY));
                 }
+                sound.SoundManager.playSFX("assets/sounds/mixkit-short-laser-gun-shot-1670.wav");
             }
             if (key == KeyEvent.VK_ESCAPE) {
                 if (plane.getHealth() <= 0) {

@@ -76,8 +76,10 @@ public class RegisterPanel extends JPanel {
             }
             boolean success = DatabaseManager.registerUser(username, password);
             if (success) {
-                JOptionPane.showMessageDialog(this, "Registration Successful! Please Login.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                gameMain.changePanel("LoginPanel");
+                JOptionPane.showMessageDialog(this, "Registration Successful! Entering game...", "Success", JOptionPane.INFORMATION_MESSAGE);
+                gameMain.setCurrentUsername(username);
+                gameMain.changePanel("GamePanel");
+                gameMain.getGamePanel().startGame();
             } else {
                 JOptionPane.showMessageDialog(this, "Username already exists!", "Error", JOptionPane.ERROR_MESSAGE);
             }

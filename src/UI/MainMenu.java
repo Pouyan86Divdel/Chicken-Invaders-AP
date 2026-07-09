@@ -34,7 +34,7 @@ public class MainMenu extends JPanel {
         JButton exitBtn = createStyledButton("Exit");
 
         newGameBtn.addActionListener(e -> gameMain.changePanel("LoginPanel"));
-        highScoresBtn.addActionListener(e -> gameMain.changePanel("HighScores"));
+        highScoresBtn.addActionListener(e -> gameMain.changePanel("HighScorePanel"));
         settingsBtn.addActionListener(e -> gameMain.changePanel("Settings"));
         howToPlayBtn.addActionListener(e -> gameMain.changePanel("HowToPlay"));
         storeBtn.addActionListener(e -> gameMain.changePanel("Store"));

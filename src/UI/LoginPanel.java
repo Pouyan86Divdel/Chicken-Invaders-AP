@@ -83,6 +83,7 @@ public class LoginPanel extends JPanel {
             boolean loggedIn = DatabaseManager.loginUser(username, password);
             if (loggedIn) {
                 JOptionPane.showMessageDialog(this, "Welcome " + username + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                gameMain.setCurrentUsername(username);
                 gameMain.changePanel("GamePanel");
                 gameMain.getGamePanel().startGame();
             } else {

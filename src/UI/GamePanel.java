@@ -1,5 +1,6 @@
 package UI;
 
+import database.DatabaseManager;
 import models.*;
 
 import javax.swing.*;
@@ -24,6 +25,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private java.util.Random random = new java.util.Random();
     private java.util.List<models.Cell> gridCells = new java.util.ArrayList<>();
     private java.util.List<models.PowerUp> powerUps = new java.util.ArrayList<>();
+    private DatabaseManager databaseManager = new DatabaseManager();
     private int frameCounter = 0;
     private int currentLevel = 1;
     private int gridSpeedX = 2;
@@ -128,6 +130,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 cell.enemyKilled();
                 if (plane.getHealth() <= 0) {
                     gameTimer.stop();
+                    String currentUsername = gameMain.getCurrentUsername();
+                    database.DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
                 }
             }
         }
@@ -140,6 +144,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 i--;
                 if (plane.getHealth() <= 0) {
                     gameTimer.stop();
+                    String currentUsername = gameMain.getCurrentUsername();
+                    databaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
                 }
             }
         }

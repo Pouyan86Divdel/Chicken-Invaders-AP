@@ -12,7 +12,7 @@ public class MainMenu extends JPanel {
     private final int BUTTON_HEIGHT = 45;
 
     public MainMenu(GameMain gameMain) {
-        sound.SoundManager.playBGM("assets/sounds/main_theme.wav");
+        sound.SoundManager.playBGM("assets/sounds/Chicken Invaders 2 Remastered OST - Main Theme.wav");
         backgroundImage = new ImageIcon("assets/images/background/background.jpg").getImage();
         setLayout(new GridBagLayout());
 

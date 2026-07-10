@@ -18,6 +18,8 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private int score = 0;
     private Image backgroundImage;
+    private Image bossLevel4Image;
+    private Image bossLevel8Image;
     private int freezeTicks = 0;
     private java.util.List<Bullet> bullets = new ArrayList<Bullet>();
     private java.util.List<Enemy> enemies = new java.util.ArrayList<>();
@@ -32,34 +34,57 @@ public class GamePanel extends JPanel implements ActionListener {
     private int gridDirection = 1;
     private int gridStepY = 20;
 
+    private int bossHealth = 0;
+    private int bossMaxHealth = 50;
+    private int bossX = 350;
+    private int bossY = 50;
+    private int bossSpeedX = 2;
+    private int bossDirection = 1;
+
     private void generateGrid() {
         gridCells.clear();
-        int hitCounter = 1;
-        String enemyType = "Normal";
+        eggs.clear();
+        bullets.clear();
+        powerUps.clear();
 
-        if (currentLevel == 1) {
-            hitCounter = 1;
-            enemyType = "Normal";
-            gridSpeedX = 2;
-            gridStepY = 20;
-        } else if (currentLevel == 2) {
-            hitCounter = 1;
-            enemyType = "Fast";
-            gridSpeedX = 4;
-            gridStepY = 25;
-        } else if (currentLevel == 3) {
-            hitCounter = 2;
-            enemyType = "Zigzag";
-            gridSpeedX = 3;
-            gridStepY = 30;
-        }
+        if (currentLevel != 4 && currentLevel != 8) {
+            int hitCounter = 2;
+            String enemyType = "Normal";
 
-        gridDirection = 1;
-
-        for (int row = 0; row < 5; row++) {
-            for (int col = 0; col < 8; col++) {
-                gridCells.add(new models.Cell(row, col, hitCounter, enemyType));
+            switch (currentLevel) {
+                case 1:
+                    hitCounter = 2; enemyType = "Normal"; gridSpeedX = 2; gridStepY = 20; break;
+                case 2:
+                    hitCounter = 2; enemyType = "Fast"; gridSpeedX = 3; gridStepY = 20; break;
+                case 3:
+                    hitCounter = 3; enemyType = "Zigzag"; gridSpeedX = 2; gridStepY = 25; break;
+                case 5:
+                    hitCounter = 3; enemyType = "Shooter"; gridSpeedX = 3; gridStepY = 25; break;
+                case 6:
+                    hitCounter = 4; enemyType = "Zigzag"; gridSpeedX = 3; gridStepY = 30; break;
+                case 7:
+                    hitCounter = 4; enemyType = "Normal"; gridSpeedX = 4; gridStepY = 30; break;
             }
+
+            gridDirection = 1;
+            for (int row = 0; row < 5; row++) {
+                for (int col = 0; col < 8; col++) {
+                    gridCells.add(new models.Cell(row, col, hitCounter, enemyType));
+                }
+            }
+        } else {
+            if (currentLevel == 4) {
+                bossMaxHealth = 50;
+                bossHealth = 50;
+                bossSpeedX = 2;
+            } else {
+                bossMaxHealth = 100;
+                bossHealth = 100;
+                bossSpeedX = 2;
+            }
+            bossX = 350;
+            bossY = 50;
+            bossDirection = 1;
         }
     }
 
@@ -67,33 +92,23 @@ public class GamePanel extends JPanel implements ActionListener {
         this.gameMain = gameMain;
         setBackground(Color.ORANGE);
         backgroundImage = new ImageIcon("assets/images/background/background.jpg").getImage();
+        bossLevel4Image = new ImageIcon("assets/images/chicken/boss1.png").getImage();
+        bossLevel8Image = new ImageIcon("assets/images/chicken/boss2.png").getImage();
         setFocusable(true);
         plane = new Plane(368, 500);
         addKeyListener(new MyKeyAdapter());
         gameTimer = new Timer(16, this);
-//        gameTimer.start();
-        for (int i = 0; i < 5; i++) {
-            int startX = 100 + (i * 120);
-            int startY = 50;
-            enemies.add(new NormalChicken(startX, startY));
-        }
     }
 
     public void startGame() {
         enemies.clear();
         bullets.clear();
         eggs.clear();
+        powerUps.clear();
         currentLevel = 1;
-        gridDirection = 1;
-        gridSpeedX = 2;
         score = 0;
         plane.setHealth(3);
         plane.resetFireLevel();
-//        for (int i = 0; i < 5; i++) {
-//            int startX = 100 + (i * 120);
-//            int startY = 50;
-//            enemies.add(new NormalChicken(startX, startY));
-//        }
         generateGrid();
         gameTimer.start();
     }
@@ -101,40 +116,59 @@ public class GamePanel extends JPanel implements ActionListener {
     private void checkCollision() {
         for (int i = 0; i < bullets.size(); i++) {
             Bullet b = bullets.get(i);
-            for (models.Cell cell : gridCells) {
-                Enemy enemy = cell.getCurrentEnemy();
-                if (enemy != null && b.getPos().intersects(enemy.getPos())) {
+            Rectangle bulletBounds = b.getPos();
+
+            if (currentLevel == 4 || currentLevel == 8) {
+                Rectangle bossBounds = new Rectangle(bossX, bossY, 150, 150);
+                if (bulletBounds.intersects(bossBounds)) {
                     bullets.remove(i);
                     i--;
-                    enemy.takeDamage(1);
+                    bossHealth--;
                     sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
-                    if (enemy.getHealth() <= 0) {
-                        score += enemy.getScore();
-
-                        if (Math.random() < 0.20) {
-                            String[] types = {"AddFire", "RapidFire", "ExtraLife", "Shield", "FreezeBomb"};
-                            String randomType = types[(int)(Math.random() * types.length)];
-                            powerUps.add(new models.PowerUp(enemy.getX(), enemy.getY(), randomType));
-                        }
-
-                        cell.enemyKilled();
+                    if (bossHealth <= 0) {
+                        score += (currentLevel == 4) ? 500 : 1000;
+                        checkLevelUp();
                     }
-                    break;
+                    continue;
+                }
+            } else {
+                for (models.Cell cell : gridCells) {
+                    Enemy enemy = cell.getCurrentEnemy();
+                    if (enemy != null && bulletBounds.intersects(enemy.getPos())) {
+                        bullets.remove(i);
+                        i--;
+                        enemy.takeDamage(1);
+                        sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                        if (enemy.getHealth() <= 0) {
+                            score += enemy.getScore();
+                            if (Math.random() < 0.20) {
+                                String[] types = {"AddFire", "RapidFire", "ExtraLife", "Shield", "FreezeBomb"};
+                                String randomType = types[(int)(Math.random() * types.length)];
+                                powerUps.add(new models.PowerUp(enemy.getX(), enemy.getY(), randomType));
+                            }
+                            cell.enemyKilled();
+                        }
+                        break;
+                    }
                 }
             }
         }
 
-        for (models.Cell cell : gridCells) {
-            Enemy enemy = cell.getCurrentEnemy();
-            if (enemy != null && plane.getPos().intersects(enemy.getPos())) {
+        if (currentLevel == 4 || currentLevel == 8) {
+            Rectangle bossBounds = new Rectangle(bossX, bossY, 150, 150);
+            if (plane.getPos().intersects(bossBounds)) {
                 plane.takeDamage(1);
-                cell.enemyKilled();
-                if (plane.getHealth() <= 0) {
-                    gameTimer.stop();
-                    sound.SoundManager.stopBGM();
-                    sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
-                    String currentUsername = gameMain.getCurrentUsername();
-                    database.DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
+                sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                checkGameOver();
+            }
+        } else {
+            for (models.Cell cell : gridCells) {
+                Enemy enemy = cell.getCurrentEnemy();
+                if (enemy != null && plane.getPos().intersects(enemy.getPos())) {
+                    plane.takeDamage(1);
+                    sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                    cell.enemyKilled();
+                    checkGameOver();
                 }
             }
         }
@@ -143,15 +177,10 @@ public class GamePanel extends JPanel implements ActionListener {
             models.Egg egg = eggs.get(i);
             if (egg.getPos().intersects(plane.getPos())) {
                 plane.takeDamage(1);
+                sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
                 eggs.remove(i);
                 i--;
-                if (plane.getHealth() <= 0) {
-                    gameTimer.stop();
-                    sound.SoundManager.stopBGM();
-                    sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
-                    String currentUsername = gameMain.getCurrentUsername();
-                    databaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
-                }
+                checkGameOver();
             }
         }
 
@@ -160,9 +189,7 @@ public class GamePanel extends JPanel implements ActionListener {
             if (p.getPos().intersects(plane.getPos())) {
                 switch (p.getType()) {
                     case "ExtraLife":
-                        if (plane.getHealth() < 5) {
-                            plane.setHealth(plane.getHealth() + 1);
-                        }
+                        if (plane.getHealth() < 5) plane.setHealth(plane.getHealth() + 1);
                         break;
                     case "AddFire":
                         plane.incrementFireLevel();
@@ -182,16 +209,32 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         }
 
-        checkLevelUp();
+        if (currentLevel != 4 && currentLevel != 8) {
+            checkLevelUp();
+        }
+    }
+
+    private void checkGameOver() {
+        if (plane.getHealth() <= 0) {
+            gameTimer.stop();
+            sound.SoundManager.stopBGM();
+            sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
+            String currentUsername = gameMain.getCurrentUsername();
+            DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
+        }
     }
 
     private void checkLevelUp() {
         boolean levelCleared = true;
-        for (models.Cell cell : gridCells) {
-            if (cell.getHitCounter() > 0) {
-                levelCleared = false;
-                break;
+        if (currentLevel != 4 && currentLevel != 8) {
+            for (models.Cell cell : gridCells) {
+                if (cell.getHitCounter() > 0) {
+                    levelCleared = false;
+                    break;
+                }
             }
+        } else {
+            levelCleared = (bossHealth <= 0);
         }
 
         if (levelCleared) {
@@ -199,22 +242,19 @@ public class GamePanel extends JPanel implements ActionListener {
             bullets.clear();
             eggs.clear();
             powerUps.clear();
-
             plane.setX(368);
             plane.setY(500);
 
-            if (currentLevel < 3) {
+            if (currentLevel < 8) {
                 currentLevel++;
                 generateGrid();
                 sound.SoundManager.playSFX("assets/sounds/mixkit-short-laser-gun-shot-1670.wav");
             } else {
                 gameTimer.stop();
                 sound.SoundManager.stopBGM();
-
                 sound.SoundManager.playBGM("assets/sounds/Chicken Invaders 2 Remastered OST - Ending Theme.wav");
-
                 String currentUsername = gameMain.getCurrentUsername();
-                database.DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
+                DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
             }
         }
     }
@@ -229,30 +269,45 @@ public class GamePanel extends JPanel implements ActionListener {
 
         plane.draw(g);
 
-        for (int i = 0; i < bullets.size(); i++) {
-            bullets.get(i).draw(g);
+        for (Bullet b : bullets) {
+            b.draw(g);
         }
 
-        for (models.Cell cell : gridCells) {
-            Enemy enemy = cell.getCurrentEnemy();
-            if (enemy != null) {
-                enemy.draw(g);
+        if (currentLevel == 4 || currentLevel == 8) {
+            Image currentBossImage = (currentLevel == 4) ? bossLevel4Image : bossLevel8Image;
+            if (currentBossImage != null) {
+                g.drawImage(currentBossImage, bossX, bossY, 150, 150, this);
+            } else {
+                g.setColor(Color.RED);
+                g.fillRect(bossX, bossY, 150, 150);
+            }
+            g.setColor(Color.GRAY);
+            g.fillRect(250, 20, 300, 15);
+            g.setColor(currentLevel == 4 ? Color.ORANGE : Color.RED);
+            int barWidth = (int) (((double) bossHealth / bossMaxHealth) * 300);
+            g.fillRect(250, 20, barWidth, 15);
+        } else {
+            for (models.Cell cell : gridCells) {
+                Enemy enemy = cell.getCurrentEnemy();
+                if (enemy != null) {
+                    enemy.draw(g);
+                }
             }
         }
 
-        for (int i = 0; i < eggs.size(); i++) {
-            eggs.get(i).draw(g);
+        for (models.Egg egg : eggs) {
+            egg.draw(g);
         }
 
-        for (int i = 0; i < powerUps.size(); i++) {
-            powerUps.get(i).draw(g);
+        for (models.PowerUp p : powerUps) {
+            p.draw(g);
         }
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 18));
-        g.drawString("Lives: " + plane.getHealth(), 20, 30);
-        g.drawString("Score: " + score, 650, 30);
-        g.drawString("Level: " + currentLevel, 370, 30);
+        g.drawString("Lives: " + plane.getHealth(), 20, 40);
+        g.drawString("Score: " + score, 650, 40);
+        g.drawString("Level: " + currentLevel, 370, 40);
 
         if (plane.getHealth() <= 0) {
             g.setColor(Color.RED);
@@ -261,8 +316,7 @@ public class GamePanel extends JPanel implements ActionListener {
             g.setFont(new Font("Arial", Font.PLAIN, 20));
             g.setColor(Color.WHITE);
             g.drawString("Press ESC to return to Main Menu", 250, 340);
-        }
-        else if (!gameTimer.isRunning() && currentLevel == 3) {
+        } else if (!gameTimer.isRunning() && currentLevel == 8 && bossHealth <= 0) {
             g.setColor(Color.GREEN);
             g.setFont(new Font("Impact", Font.BOLD, 55));
             g.drawString("VICTORY! YOU WIN", 210, 280);
@@ -294,31 +348,38 @@ public class GamePanel extends JPanel implements ActionListener {
         }
 
         if (freezeTicks <= 0) {
-            boolean hitEdge = false;
-            int deltaX = gridSpeedX * gridDirection;
+            if (currentLevel == 4 || currentLevel == 8) {
+                bossX += bossSpeedX * bossDirection;
+                if (bossX > 630 || bossX < 20) {
+                    bossDirection *= -1;
+                }
+            } else {
+                boolean hitEdge = false;
+                int deltaX = gridSpeedX * gridDirection;
 
-            for (models.Cell cell : gridCells) {
-                Enemy enemy = cell.getCurrentEnemy();
-                if (enemy != null && !enemy.isSpawning()) {
-                    if ((enemy.getX() + deltaX > 750 && gridDirection == 1) ||
-                            (enemy.getX() + deltaX < 10 && gridDirection == -1)) {
-                        hitEdge = true;
-                        break;
+                for (models.Cell cell : gridCells) {
+                    Enemy enemy = cell.getCurrentEnemy();
+                    if (enemy != null && !enemy.isSpawning()) {
+                        if ((enemy.getX() + deltaX > 750 && gridDirection == 1) ||
+                                (enemy.getX() + deltaX < 10 && gridDirection == -1)) {
+                            hitEdge = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            int actualDeltaX = deltaX;
-            int actualDeltaY = 0;
+                int actualDeltaX = deltaX;
+                int actualDeltaY = 0;
 
-            if (hitEdge) {
-                gridDirection *= -1;
-                actualDeltaX = 0;
-                actualDeltaY = gridStepY;
-            }
+                if (hitEdge) {
+                    gridDirection *= -1;
+                    actualDeltaX = 0;
+                    actualDeltaY = gridStepY;
+                }
 
-            for (models.Cell cell : gridCells) {
-                cell.updatePosition(actualDeltaX, actualDeltaY);
+                for (models.Cell cell : gridCells) {
+                    cell.updatePosition(actualDeltaX, actualDeltaY);
+                }
             }
 
             for (models.Cell cell : gridCells) {
@@ -329,23 +390,44 @@ public class GamePanel extends JPanel implements ActionListener {
             }
 
             frameCounter++;
-            if (frameCounter >= 180) {
+            if (frameCounter >= 60) {
                 frameCounter = 0;
 
-                int shootChance = 3;
-                if (currentLevel == 2) {
-                    shootChance = 1;
-                } else if (currentLevel == 3) {
-                    shootChance = 2;
-                }
-
-                for (models.Cell cell : gridCells) {
-                    Enemy enemy = cell.getCurrentEnemy();
-                    if (enemy != null && !enemy.isSpawning()) {
-                        if (random.nextInt(10) < shootChance) {
-                            int eggX = enemy.getX() + 24;
-                            int eggY = enemy.getY() + 40;
-                            eggs.add(new Egg(eggX, eggY));
+                if (currentLevel == 4) {
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 0, 1, 4));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 0, -1, 4));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, -1, 0, 4));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 1, 0, 4));
+                } else if (currentLevel == 8) {
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 0, 1, 5));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 0, -1, 5));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, -1, 0, 5));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 1, 0, 5));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, -1, 1, 5));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 1, 1, 5));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, -1, -1, 5));
+                    eggs.add(new Egg(bossX + 75, bossY + 120, 1, -1, 5));
+                } else {
+                    for (models.Cell cell : gridCells) {
+                        Enemy enemy = cell.getCurrentEnemy();
+                        if (enemy != null && !enemy.isSpawning()) {
+                            int spawnChance = random.nextInt(100);
+                            if (enemy instanceof ShooterChicken) {
+                                if (spawnChance < 20) {
+                                    int type = random.nextInt(3);
+                                    if (type == 0) {
+                                        eggs.add(new Egg(enemy.getX() + 24, enemy.getY() + 40, 0, 1, 4));
+                                    } else if (type == 1) {
+                                        eggs.add(new Egg(enemy.getX() + 24, enemy.getY() + 40, -1, 0, 5));
+                                    } else {
+                                        eggs.add(new Egg(enemy.getX() + 24, enemy.getY() + 40, 1, 0, 5));
+                                    }
+                                }
+                            } else {
+                                if (spawnChance < 4) {
+                                    eggs.add(new Egg(enemy.getX() + 24, enemy.getY() + 40, 0, 1, 4));
+                                }
+                            }
                         }
                     }
                 }
@@ -383,24 +465,17 @@ public class GamePanel extends JPanel implements ActionListener {
             if (key == KeyEvent.VK_UP || key == KeyEvent.VK_W) upPressed = true;
             if (key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) downPressed = true;
             if (key == KeyEvent.VK_SPACE) {
-                int level = plane.getFireLevel();
+                int fireLevel = plane.getFireLevel();
                 int pX = plane.getX();
                 int pY = plane.getY();
 
-                if (level == 1) {
-                    bullets.add(new Bullet(pX + 24, pY));
-                } else if (level == 2) {
-                    bullets.add(new Bullet(pX + 10, pY));
-                    bullets.add(new Bullet(pX + 38, pY));
-                } else if (level == 3) {
-                    bullets.add(new Bullet(pX + 24, pY));
-                    bullets.add(new Bullet(pX + 6, pY));
-                    bullets.add(new Bullet(pX + 42, pY));
+                for (int i = 0; i < fireLevel; i++) {
+                    bullets.add(new Bullet(pX + 24 + (i * 10) - ((fireLevel - 1) * 5), pY));
                 }
                 sound.SoundManager.playSFX("assets/sounds/mixkit-short-laser-gun-shot-1670.wav");
             }
             if (key == KeyEvent.VK_ESCAPE) {
-                if (plane.getHealth() <= 0 || (!gameTimer.isRunning() && currentLevel == 3)) {
+                if (plane.getHealth() <= 0 || (!gameTimer.isRunning() && currentLevel == 8)) {
                     sound.SoundManager.stopBGM();
                     gameMain.changePanel("MainMenu");
                 }

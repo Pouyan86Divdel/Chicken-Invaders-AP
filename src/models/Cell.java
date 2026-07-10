@@ -14,10 +14,8 @@ public class Cell {
         this.col = col;
         this.hitCounter = hitCounter;
         this.enemyType = enemyType;
-
         this.x = 80 + col * 70;
         this.y = 50 + row * 60;
-
         spawnEnemy();
     }
 
@@ -37,10 +35,8 @@ public class Cell {
                     currentEnemy = new NormalChicken(x, y);
                     break;
             }
-
             int startX = (Math.random() < 0.5) ? -50 : 850;
             int startY = -50;
-
             currentEnemy.startSpawnAnimation(startX, startY, this.x, this.y);
         } else {
             currentEnemy = null;
@@ -59,10 +55,15 @@ public class Cell {
             if (!currentEnemy.isSpawning()) {
                 currentEnemy.x = this.x;
                 currentEnemy.y = this.y;
+            } else {
+                currentEnemy.targetX = this.x;
+                currentEnemy.targetY = this.y;
             }
         }
     }
 
     public Enemy getCurrentEnemy() { return currentEnemy; }
     public int getHitCounter() { return hitCounter; }
+    public int getX() { return x; }
+    public int getY() { return y; }
 }

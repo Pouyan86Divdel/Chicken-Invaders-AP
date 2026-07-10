@@ -2,13 +2,18 @@ package models;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 
 public class ShooterChicken extends Enemy {
 
     public ShooterChicken(int x, int y) {
         super(x, y, 2, 1);
-        ImageIcon icon = new ImageIcon("assets/images/chicken/shooter.png");
-        this.image = icon.getImage();
+        File imgFile = new File("assets/images/chicken/shooter_chicken.png");
+        if (imgFile.exists()) {
+            this.image = new ImageIcon("assets/images/chicken/shooter_chicken.png").getImage();
+        } else {
+            this.image = new ImageIcon("assets/images/chicken/shooter_chicken.png").getImage();
+        }
     }
 
     @Override

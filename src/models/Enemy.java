@@ -7,7 +7,7 @@ public abstract class Enemy {
     protected int speed;
     protected int health;
     protected Image image;
-    private int targetX, targetY;
+    public int targetX, targetY;
     private boolean isSpawning = false;
 
     public void startSpawnAnimation(int startX, int startY, int targetX, int targetY) {

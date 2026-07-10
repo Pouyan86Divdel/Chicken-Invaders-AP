@@ -198,11 +198,23 @@ public class GamePanel extends JPanel implements ActionListener {
             score += 200;
             bullets.clear();
             eggs.clear();
+            powerUps.clear();
+
+            plane.setX(368);
+            plane.setY(500);
+
             if (currentLevel < 3) {
                 currentLevel++;
                 generateGrid();
+                sound.SoundManager.playSFX("assets/sounds/mixkit-short-laser-gun-shot-1670.wav");
             } else {
                 gameTimer.stop();
+                sound.SoundManager.stopBGM();
+
+                sound.SoundManager.playBGM("assets/sounds/Chicken Invaders 2 Remastered OST - Ending Theme.wav");
+
+                String currentUsername = gameMain.getCurrentUsername();
+                database.DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
             }
         }
     }
@@ -244,11 +256,19 @@ public class GamePanel extends JPanel implements ActionListener {
 
         if (plane.getHealth() <= 0) {
             g.setColor(Color.RED);
-            g.setFont(new Font("Arial", Font.BOLD, 50));
-            g.drawString("GAME OVER", 250, 300);
+            g.setFont(new Font("Impact", Font.BOLD, 55));
+            g.drawString("GAME OVER", 270, 280);
             g.setFont(new Font("Arial", Font.PLAIN, 20));
             g.setColor(Color.WHITE);
-            g.drawString("Press ESC to return to Main Menu", 240, 350);
+            g.drawString("Press ESC to return to Main Menu", 250, 340);
+        }
+        else if (!gameTimer.isRunning() && currentLevel == 3) {
+            g.setColor(Color.GREEN);
+            g.setFont(new Font("Impact", Font.BOLD, 55));
+            g.drawString("VICTORY! YOU WIN", 210, 280);
+            g.setFont(new Font("Arial", Font.PLAIN, 20));
+            g.setColor(Color.WHITE);
+            g.drawString("Score: " + score + " | Press ESC to return to Menu", 220, 340);
         }
     }
 
@@ -380,7 +400,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 sound.SoundManager.playSFX("assets/sounds/mixkit-short-laser-gun-shot-1670.wav");
             }
             if (key == KeyEvent.VK_ESCAPE) {
-                if (plane.getHealth() <= 0) {
+                if (plane.getHealth() <= 0 || (!gameTimer.isRunning() && currentLevel == 3)) {
+                    sound.SoundManager.stopBGM();
                     gameMain.changePanel("MainMenu");
                 }
             }

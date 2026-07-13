@@ -9,6 +9,8 @@ public class Plane {
     private int health = 3;
     private int fireLevel = 1;
     private Image image;
+    private int hitEffectTicks = 0;
+    private Image hitPlaneImage = new ImageIcon("assets/images/airplane/plane_hit.png").getImage();
 
     private int rapidFireTicks = 0;
     private int shieldTicks = 0;
@@ -27,6 +29,9 @@ public class Plane {
         if (shieldTicks > 0) {
             shieldTicks--;
         }
+        if (hitEffectTicks > 0) {
+            hitEffectTicks--;
+        }
     }
 
     public void activateRapidFire() {
@@ -37,11 +42,23 @@ public class Plane {
         this.shieldTicks = 10 * 60;
     }
 
+    public void deactivateShield() {
+        this.shieldTicks = 0;
+    }
+
+    public void deactivateRapidFire() {
+        this.rapidFireTicks = 0;
+    }
+
     public boolean isRapidFireActive() {
         return rapidFireTicks > 0;
     }
 
     public boolean isShieldActive() {
+        return shieldTicks > 0;
+    }
+
+    public boolean hasShield() {
         return shieldTicks > 0;
     }
 
@@ -75,16 +92,26 @@ public class Plane {
         }
     }
 
+    public void activateHitEffect() {
+        this.hitEffectTicks = 60;
+    }
+
+    public void updateHitTimer() {
+        if (hitEffectTicks > 0) {
+            hitEffectTicks--;
+        }
+    }
+
     public int getFireLevel() {
         return fireLevel;
     }
 
     public Rectangle getPos() {
-        return new Rectangle(x, y, 54, 54);
+        return new Rectangle(x + 7, y + 7, 44, 44);
     }
 
     public void takeDamage(int damage) {
-        if (isShieldActive()) {
+        if (hasShield()) {
             return;
         }
         this.health -= damage;
@@ -99,8 +126,12 @@ public class Plane {
     }
 
     public void draw(Graphics g) {
-        g.drawImage(image, x, y, 64, 64, null);
-        if (isShieldActive()) {
+        if (hitEffectTicks > 0) {
+            g.drawImage(hitPlaneImage, x, y, 64, 64, null);
+        } else {
+            g.drawImage(image, x, y, 64, 64, null);
+        }
+        if (hasShield()) {
             g.setColor(new Color(0, 191, 255, 100));
             g.fillOval(x - 8, y - 8, 80, 80);
             g.setColor(Color.green);
@@ -112,6 +143,7 @@ public class Plane {
         this.fireLevel = 1;
         this.rapidFireTicks = 0;
         this.shieldTicks = 0;
+        this.hitEffectTicks = 0;
     }
 
     public void setX(int x) { this.x = x; }

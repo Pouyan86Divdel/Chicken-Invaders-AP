@@ -34,7 +34,7 @@ public class Egg {
 
     public void draw(Graphics g) {
         if (image != null) {
-            g.drawImage(image, x, y, 20, 25, null);
+            g.drawImage(image, x + 10, y + 10, 20, 25, null);
         } else {
             g.setColor(Color.YELLOW);
             g.fillOval(x, y, 15, 20);

@@ -16,6 +16,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private Plane plane;
     private Timer gameTimer;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
+    private boolean spacePressed = false;
     private int score = 0;
     private Image backgroundImage;
     private Image bossLevel4Image;
@@ -40,6 +41,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private int bossY = 50;
     private int bossSpeedX = 2;
     private int bossDirection = 1;
+    private boolean isOutOfBounds = false;
 
     private void generateGrid() {
         gridCells.clear();
@@ -155,20 +157,26 @@ public class GamePanel extends JPanel implements ActionListener {
         }
 
         if (currentLevel == 4 || currentLevel == 8) {
-            Rectangle bossBounds = new Rectangle(bossX, bossY, 150, 150);
+            Rectangle bossBounds = new Rectangle(bossX, bossY, 30, 30);
             if (plane.getPos().intersects(bossBounds)) {
-                plane.takeDamage(1);
-                sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
-                checkGameOver();
+                if (!plane.hasShield()) {
+                    plane.takeDamage(1);
+                    plane.activateHitEffect();
+                    sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                    checkGameOver();
+                }
             }
         } else {
             for (models.Cell cell : gridCells) {
                 Enemy enemy = cell.getCurrentEnemy();
                 if (enemy != null && plane.getPos().intersects(enemy.getPos())) {
-                    plane.takeDamage(1);
-                    sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                    if (!plane.hasShield()) {
+                        plane.takeDamage(1);
+                        plane.activateHitEffect();
+                        sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                        checkGameOver();
+                    }
                     cell.enemyKilled();
-                    checkGameOver();
                 }
             }
         }
@@ -176,11 +184,14 @@ public class GamePanel extends JPanel implements ActionListener {
         for (int i = 0; i < eggs.size(); i++) {
             models.Egg egg = eggs.get(i);
             if (egg.getPos().intersects(plane.getPos())) {
-                plane.takeDamage(1);
-                sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                if (!plane.hasShield()) {
+                    plane.takeDamage(1);
+                    plane.activateHitEffect();
+                    sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
+                    checkGameOver();
+                }
                 eggs.remove(i);
                 i--;
-                checkGameOver();
             }
         }
 
@@ -215,7 +226,7 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void checkGameOver() {
-        if (plane.getHealth() <= 0) {
+        if (plane.getHealth() <= 0 || isOutOfBounds) {
             gameTimer.stop();
             sound.SoundManager.stopBGM();
             sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
@@ -309,7 +320,7 @@ public class GamePanel extends JPanel implements ActionListener {
         g.drawString("Score: " + score, 650, 40);
         g.drawString("Level: " + currentLevel, 370, 40);
 
-        if (plane.getHealth() <= 0) {
+        if (plane.getHealth() <= 0 || isOutOfBounds) {
             g.setColor(Color.RED);
             g.setFont(new Font("Impact", Font.BOLD, 55));
             g.drawString("GAME OVER", 270, 280);
@@ -328,12 +339,21 @@ public class GamePanel extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        for (int i = 0; i < gridCells.size(); i++) {
+            Cell gc = gridCells.get(i);
+            if (gc.getY() >= 515 && gc.getHitCounter() != 0) {
+                isOutOfBounds = true;
+                checkGameOver();
+            }
+        }
         if (leftPressed) plane.moveLeft();
         if (rightPressed) plane.moveRight();
         if (upPressed) plane.moveUp();
         if (downPressed) plane.moveDown();
 
         plane.updateTimers();
+        plane.updateHitTimer();
+
         if (freezeTicks > 0) {
             freezeTicks--;
         }
@@ -451,7 +471,6 @@ public class GamePanel extends JPanel implements ActionListener {
                 i--;
             }
         }
-
         checkCollision();
         repaint();
     }
@@ -465,17 +484,20 @@ public class GamePanel extends JPanel implements ActionListener {
             if (key == KeyEvent.VK_UP || key == KeyEvent.VK_W) upPressed = true;
             if (key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) downPressed = true;
             if (key == KeyEvent.VK_SPACE) {
-                int fireLevel = plane.getFireLevel();
-                int pX = plane.getX();
-                int pY = plane.getY();
+                if (!spacePressed) {
+                    spacePressed = true;
+                    int fireLevel = plane.getFireLevel();
+                    int pX = plane.getX();
+                    int pY = plane.getY();
 
-                for (int i = 0; i < fireLevel; i++) {
-                    bullets.add(new Bullet(pX + 24 + (i * 10) - ((fireLevel - 1) * 5), pY));
+                    for (int i = 0; i < fireLevel; i++) {
+                        bullets.add(new Bullet(pX + 24 + (i * 10) - ((fireLevel - 1) * 5), pY));
+                    }
+                    sound.SoundManager.playSFX("assets/sounds/mixkit-short-laser-gun-shot-1670.wav");
                 }
-                sound.SoundManager.playSFX("assets/sounds/mixkit-short-laser-gun-shot-1670.wav");
             }
             if (key == KeyEvent.VK_ESCAPE) {
-                if (plane.getHealth() <= 0 || (!gameTimer.isRunning() && currentLevel == 8)) {
+                if (plane.getHealth() <= 0 || (!gameTimer.isRunning() && currentLevel == 8) || isOutOfBounds) {
                     sound.SoundManager.stopBGM();
                     gameMain.changePanel("MainMenu");
                 }
@@ -489,6 +511,7 @@ public class GamePanel extends JPanel implements ActionListener {
             if (key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_D) rightPressed = false;
             if (key == KeyEvent.VK_UP || key == KeyEvent.VK_W) upPressed = false;
             if (key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) downPressed = false;
+            if (key == KeyEvent.VK_SPACE) spacePressed = false;
         }
     }
 

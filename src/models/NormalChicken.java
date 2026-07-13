@@ -14,6 +14,7 @@ public class NormalChicken extends Enemy {
     @Override
     public void move() {
         y += speed;
+
     }
 
     @Override

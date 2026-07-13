@@ -58,7 +58,7 @@ public abstract class Enemy {
     }
 
     public Rectangle getPos() {
-        return new Rectangle(x, y, 48, 48);
+        return new Rectangle(x + 8, y + 5, 33, 38);
     }
 
     public int getX() { return x; }

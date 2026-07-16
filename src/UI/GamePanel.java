@@ -28,6 +28,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private java.util.Random random = new java.util.Random();
     private java.util.List<models.Cell> gridCells = new java.util.ArrayList<>();
     private java.util.List<models.PowerUp> powerUps = new java.util.ArrayList<>();
+    private java.util.List<models.Coin> coins = new java.util.ArrayList<>();
     private DatabaseManager databaseManager = new DatabaseManager();
     private int frameCounter = 0;
     private int currentLevel = 1;
@@ -42,35 +43,56 @@ public class GamePanel extends JPanel implements ActionListener {
     private int bossSpeedX = 2;
     private int bossDirection = 1;
     private boolean isOutOfBounds = false;
+    private boolean isPaused = false;
 
     private void generateGrid() {
         gridCells.clear();
         eggs.clear();
         bullets.clear();
         powerUps.clear();
+        coins.clear();
 
         if (currentLevel != 4 && currentLevel != 8) {
             int hitCounter = 2;
-            String enemyType = "Normal";
+            gridDirection = 1;
 
             switch (currentLevel) {
                 case 1:
-                    hitCounter = 2; enemyType = "Normal"; gridSpeedX = 2; gridStepY = 20; break;
+                    hitCounter = 2; gridSpeedX = 2; gridStepY = 20; break;
                 case 2:
-                    hitCounter = 2; enemyType = "Fast"; gridSpeedX = 3; gridStepY = 20; break;
+                    hitCounter = 2; gridSpeedX = 3; gridStepY = 20; break;
                 case 3:
-                    hitCounter = 3; enemyType = "Zigzag"; gridSpeedX = 2; gridStepY = 25; break;
+                    hitCounter = 3; gridSpeedX = 2; gridStepY = 25; break;
                 case 5:
-                    hitCounter = 3; enemyType = "Shooter"; gridSpeedX = 3; gridStepY = 25; break;
+                    hitCounter = 3; gridSpeedX = 3; gridStepY = 25; break;
                 case 6:
-                    hitCounter = 4; enemyType = "Zigzag"; gridSpeedX = 3; gridStepY = 30; break;
+                    hitCounter = 4; gridSpeedX = 3; gridStepY = 30; break;
                 case 7:
-                    hitCounter = 4; enemyType = "Normal"; gridSpeedX = 4; gridStepY = 30; break;
+                    hitCounter = 4; gridSpeedX = 4; gridStepY = 30; break;
             }
 
-            gridDirection = 1;
             for (int row = 0; row < 5; row++) {
                 for (int col = 0; col < 8; col++) {
+                    String enemyType = "Normal";
+
+                    if (currentLevel == 1) {
+                        enemyType = "Normal";
+                    } else if (currentLevel == 2) {
+                        enemyType = (col % 2 == 0) ? "Normal" : "Fast";
+                    } else if (currentLevel == 3) {
+                        enemyType = (col % 2 == 0) ? "Normal" : "Zigzag";
+                    } else if (currentLevel == 5) {
+                        enemyType = (col % 2 == 0) ? "Shooter" : "Fast";
+                    } else if (currentLevel == 6) {
+                        enemyType = (col % 2 == 0) ? "Zigzag" : "Shooter";
+                    } else if (currentLevel == 7) {
+                        int typeIndex = (row * 8 + col) % 4;
+                        if (typeIndex == 0) enemyType = "Normal";
+                        else if (typeIndex == 1) enemyType = "Fast";
+                        else if (typeIndex == 2) enemyType = "Zigzag";
+                        else enemyType = "Shooter";
+                    }
+
                     gridCells.add(new models.Cell(row, col, hitCounter, enemyType));
                 }
             }
@@ -103,11 +125,13 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void startGame() {
+        isPaused = false;
         enemies.clear();
         bullets.clear();
         eggs.clear();
         isOutOfBounds = false;
         powerUps.clear();
+        coins.clear();
         currentLevel = 1;
         score = 0;
 
@@ -160,10 +184,13 @@ public class GamePanel extends JPanel implements ActionListener {
                         sound.SoundManager.playSFX("assets/sounds/mixkit-epic-impact-afar-explosion-2782.wav");
                         if (enemy.getHealth() <= 0) {
                             score += enemy.getScore();
-                            if (Math.random() < 0.20) {
+                            double rand = Math.random();
+                            if (rand < 0.10) {
                                 String[] types = {"AddFire", "RapidFire", "ExtraLife", "Shield", "FreezeBomb"};
                                 String randomType = types[(int)(Math.random() * types.length)];
                                 powerUps.add(new models.PowerUp(enemy.getX(), enemy.getY(), randomType));
+                            } else if (rand < 0.20) {
+                                coins.add(new models.Coin(enemy.getX(), enemy.getY()));
                             }
                             cell.enemyKilled();
                         }
@@ -244,6 +271,19 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         }
 
+        for (int i = 0; i < coins.size(); i++) {
+            models.Coin c = coins.get(i);
+            if (c.getPos().intersects(plane.getPos())) {
+                String currentUsername = gameMain.getCurrentUsername();
+                if (!currentUsername.equals("Guest")) {
+                    DatabaseManager.updateCoins(currentUsername, 1);
+                }
+                sound.SoundManager.playSFX("assets/sounds/coin-drop.wav");
+                coins.remove(i);
+                i--;
+            }
+        }
+
         if (currentLevel != 4 && currentLevel != 8) {
             checkLevelUp();
         }
@@ -256,11 +296,6 @@ public class GamePanel extends JPanel implements ActionListener {
             sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
             String currentUsername = gameMain.getCurrentUsername();
             DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
-
-            if (!currentUsername.equals("Guest")) {
-                int earnedCoins = score / 100;
-                DatabaseManager.updateCoins(currentUsername, earnedCoins);
-            }
         }
     }
 
@@ -282,6 +317,7 @@ public class GamePanel extends JPanel implements ActionListener {
             bullets.clear();
             eggs.clear();
             powerUps.clear();
+            coins.clear();
             plane.setX(368);
             plane.setY(500);
 
@@ -295,11 +331,6 @@ public class GamePanel extends JPanel implements ActionListener {
                 sound.SoundManager.playBGM("assets/sounds/Chicken Invaders 2 Remastered OST - Ending Theme.wav");
                 String currentUsername = gameMain.getCurrentUsername();
                 DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
-
-                if (!currentUsername.equals("Guest")) {
-                    int earnedCoins = score / 100;
-                    DatabaseManager.updateCoins(currentUsername, earnedCoins);
-                }
             }
         }
     }
@@ -348,9 +379,24 @@ public class GamePanel extends JPanel implements ActionListener {
             p.draw(g);
         }
 
+        for (models.Coin c : coins) {
+            c.draw(g);
+        }
+
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 18));
+
         g.drawString("Lives: " + plane.getHealth(), 20, 40);
+
+        int currentCoins = 0;
+        String username = gameMain.getCurrentUsername();
+        if (!username.equals("Guest")) {
+            currentCoins = DatabaseManager.getCoins(username);
+        }
+        g.setColor(Color.YELLOW);
+        g.drawString("Coins: " + currentCoins, 20, 70);
+
+        g.setColor(Color.WHITE);
         g.drawString("Score: " + score, 650, 40);
         g.drawString("Level: " + currentLevel, 370, 40);
 
@@ -369,10 +415,28 @@ public class GamePanel extends JPanel implements ActionListener {
             g.setColor(Color.WHITE);
             g.drawString("Score: " + score + " | Press ESC to return to Menu", 220, 340);
         }
+
+        if (isPaused) {
+            g.setColor(new Color(0, 0, 0, 150));
+            g.fillRect(0, 0, 800, 600);
+
+            g.setColor(Color.YELLOW);
+            g.setFont(new Font("Impact", Font.BOLD, 60));
+            g.drawString("GAME PAUSED", 250, 260);
+
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.PLAIN, 20));
+            g.drawString("Press 'P' to Resume", 310, 310);
+        }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (isPaused) {
+            repaint();
+            return;
+        }
+
         for (int i = 0; i < gridCells.size(); i++) {
             Cell gc = gridCells.get(i);
             if (gc.getY() >= 515 && gc.getHitCounter() != 0) {
@@ -505,6 +569,16 @@ public class GamePanel extends JPanel implements ActionListener {
                 i--;
             }
         }
+
+        for (int i = 0; i < coins.size(); i++) {
+            models.Coin c = coins.get(i);
+            c.move();
+            if (c.getY() > 600) {
+                coins.remove(i);
+                i--;
+            }
+        }
+
         checkCollision();
         repaint();
     }
@@ -513,6 +587,26 @@ public class GamePanel extends JPanel implements ActionListener {
         @Override
         public void keyPressed(KeyEvent e) {
             int key = e.getKeyCode();
+
+            if (key == KeyEvent.VK_P) {
+                if (plane.getHealth() > 0 && !isOutOfBounds && (gameTimer.isRunning() || isPaused)) {
+                    isPaused = !isPaused;
+                    if (isPaused) {
+                        leftPressed = false;
+                        rightPressed = false;
+                        upPressed = false;
+                        downPressed = false;
+                        spacePressed = false;
+                    }
+                    repaint();
+                }
+                return;
+            }
+
+            if (isPaused) {
+                return;
+            }
+
             if (key == KeyEvent.VK_LEFT || key == KeyEvent.VK_A) leftPressed = true;
             if (key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_D) rightPressed = true;
             if (key == KeyEvent.VK_UP || key == KeyEvent.VK_W) upPressed = true;

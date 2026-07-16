@@ -5,7 +5,8 @@ import java.awt.*;
 
 public class Plane {
     private int x, y;
-    private int speed = 5;
+    private int baseSpeed = 5;
+    private int speedBonus = 0;
     private int health = 3;
     private int fireLevel = 1;
     private Image image;
@@ -63,33 +64,47 @@ public class Plane {
     }
 
     public void moveLeft() {
+        int currentSpeed = baseSpeed + speedBonus;
         if (x > 0) {
-            x -= speed;
+            x -= currentSpeed;
         }
     }
 
     public void moveRight() {
+        int currentSpeed = baseSpeed + speedBonus;
         if (x < 800 - 64) {
-            x += speed;
+            x += currentSpeed;
         }
     }
 
     public void moveUp() {
+        int currentSpeed = baseSpeed + speedBonus;
         if (y > 0) {
-            y -= speed;
+            y -= currentSpeed;
         }
     }
 
     public void moveDown() {
+        int currentSpeed = baseSpeed + speedBonus;
         if (y < 600 - 64) {
-            y += speed;
+            y += currentSpeed;
         }
     }
 
     public void incrementFireLevel() {
-        if (fireLevel < 3) {
+        if (fireLevel < 10) {
             fireLevel++;
         }
+    }
+
+    public void setFireLevel(int level) {
+        if (level >= 1 && level <= 10) {
+            this.fireLevel = level;
+        }
+    }
+
+    public void setSpeedBonus(int bonus) {
+        this.speedBonus = bonus;
     }
 
     public void activateHitEffect() {

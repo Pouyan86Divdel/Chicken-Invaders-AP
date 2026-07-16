@@ -7,6 +7,7 @@ public class GameMain extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
     private GamePanel gamePanel;
+    private StorePanel storePanel;
     private String currentUsername = "Guest";
 
     public GameMain() {
@@ -18,6 +19,7 @@ public class GameMain extends JFrame {
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
         gamePanel = new GamePanel(this);
+        storePanel = new StorePanel(this);
         MainMenu mainMenu = new MainMenu(this);
         SettingsPanel settingsPanel = new SettingsPanel(this);
         HowToPlayPanel howToPlayPanel = new HowToPlayPanel(this);
@@ -31,6 +33,7 @@ public class GameMain extends JFrame {
 
         mainPanel.add(mainMenu, "MainMenu");
         mainPanel.add(gamePanel, "GamePanel");
+        mainPanel.add(storePanel, "Store");
         mainPanel.add(settingsPanel, "Settings");
         mainPanel.add(howToPlayPanel, "HowToPlay");
         mainPanel.add(highScorePanel, "HighScorePanel");
@@ -63,6 +66,10 @@ public class GameMain extends JFrame {
                     ((HighScorePanel) comp).updateScores();
                 }
             }
+        }
+
+        if (panelName.equals("Store")) {
+            storePanel.updateStoreUI();
         }
 
         cardLayout.show(mainPanel, panelName);

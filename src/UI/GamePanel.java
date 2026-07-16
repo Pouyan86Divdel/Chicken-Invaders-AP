@@ -106,11 +106,28 @@ public class GamePanel extends JPanel implements ActionListener {
         enemies.clear();
         bullets.clear();
         eggs.clear();
+        isOutOfBounds = false;
         powerUps.clear();
         currentLevel = 1;
         score = 0;
-        plane.setHealth(3);
-        plane.resetFireLevel();
+
+        String username = gameMain.getCurrentUsername();
+        int initialHealth = 3;
+        int speedBonus = 0;
+        int defaultFire = 1;
+
+        if (!username.equals("Guest")) {
+            int healthLvl = DatabaseManager.getUpgradeLevel(username, "max_health");
+            initialHealth = healthLvl + 2;
+            int speedLvl = DatabaseManager.getUpgradeLevel(username, "speed_level");
+            speedBonus = (speedLvl - 1) * 2;
+            defaultFire = DatabaseManager.getUpgradeLevel(username, "fire_level");
+        }
+
+        plane.setHealth(initialHealth);
+        plane.setSpeedBonus(speedBonus);
+        plane.setFireLevel(defaultFire);
+
         generateGrid();
         gameTimer.start();
     }
@@ -200,7 +217,14 @@ public class GamePanel extends JPanel implements ActionListener {
             if (p.getPos().intersects(plane.getPos())) {
                 switch (p.getType()) {
                     case "ExtraLife":
-                        if (plane.getHealth() < 5) plane.setHealth(plane.getHealth() + 1);
+                        int maxHealthLimit = 3;
+                        if (!gameMain.getCurrentUsername().equals("Guest")) {
+                            int healthLvl = DatabaseManager.getUpgradeLevel(gameMain.getCurrentUsername(), "max_health");
+                            maxHealthLimit = healthLvl + 2;
+                        }
+                        if (plane.getHealth() < maxHealthLimit) {
+                            plane.setHealth(plane.getHealth() + 1);
+                        }
                         break;
                     case "AddFire":
                         plane.incrementFireLevel();
@@ -232,6 +256,11 @@ public class GamePanel extends JPanel implements ActionListener {
             sound.SoundManager.playSFX("assets/sounds/mixkit-retro-arcade-game-over-470.wav");
             String currentUsername = gameMain.getCurrentUsername();
             DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
+
+            if (!currentUsername.equals("Guest")) {
+                int earnedCoins = score / 100;
+                DatabaseManager.updateCoins(currentUsername, earnedCoins);
+            }
         }
     }
 
@@ -266,6 +295,11 @@ public class GamePanel extends JPanel implements ActionListener {
                 sound.SoundManager.playBGM("assets/sounds/Chicken Invaders 2 Remastered OST - Ending Theme.wav");
                 String currentUsername = gameMain.getCurrentUsername();
                 DatabaseManager.saveGameRecord(currentUsername, score, currentLevel, "Music:On,SFX:On");
+
+                if (!currentUsername.equals("Guest")) {
+                    int earnedCoins = score / 100;
+                    DatabaseManager.updateCoins(currentUsername, earnedCoins);
+                }
             }
         }
     }

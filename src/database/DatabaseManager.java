@@ -34,10 +34,19 @@ public class DatabaseManager {
                 + " sound_settings TEXT"
                 + ");";
 
+        String storeTableSql = "CREATE TABLE IF NOT EXISTS store ("
+                + " username TEXT PRIMARY KEY,"
+                + " coins INTEGER DEFAULT 0,"
+                + " speed_level INTEGER DEFAULT 1,"
+                + " fire_level INTEGER DEFAULT 1,"
+                + " max_health INTEGER DEFAULT 1"
+                + ");";
+
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(userTableSql);
             stmt.execute(recordsTableSql);
+            stmt.execute(storeTableSql);
             System.out.println("Database tables initialized successfully.");
         } catch (SQLException e) {
             System.out.println("Error creating tables: " + e.getMessage());
@@ -46,14 +55,27 @@ public class DatabaseManager {
 
     public static boolean registerUser(String username, String password) {
         String sql = "INSERT INTO users(username, password) VALUES(?, ?)";
+        String storeSql = "INSERT OR IGNORE INTO store(username, coins, speed_level, fire_level, max_health) VALUES(?, 0, 1, 1, 1)";
 
-        try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            pstmt.setString(2, password);
-            pstmt.executeUpdate();
-            System.out.println("User " + username + " registered successfully.");
-            return true;
+        try (Connection conn = connect()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 PreparedStatement pstmtStore = conn.prepareStatement(storeSql)) {
+
+                pstmt.setString(1, username);
+                pstmt.setString(2, password);
+                pstmt.executeUpdate();
+
+                pstmtStore.setString(1, username);
+                pstmtStore.executeUpdate();
+
+                conn.commit();
+                System.out.println("User " + username + " registered successfully.");
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
             System.out.println("Registration failed: " + e.getMessage());
             return false;
@@ -136,6 +158,76 @@ public class DatabaseManager {
             }
         } catch (SQLException e) {
             System.out.println("Error updating high score: " + e.getMessage());
+        }
+    }
+
+    public static int getCoins(String username) {
+        String sql = "SELECT coins FROM store WHERE username = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("coins");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error getting coins: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public static void updateCoins(String username, int amount) {
+        String sql = "INSERT INTO store(username, coins) VALUES(?, ?) "
+                + "ON CONFLICT(username) DO UPDATE SET coins = coins + ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setInt(2, amount);
+            pstmt.setInt(3, amount);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error updating coins: " + e.getMessage());
+        }
+    }
+
+    public static int getUpgradeLevel(String username, String column) {
+        String sql = "SELECT " + column + " FROM store WHERE username = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(column);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error getting upgrade level: " + e.getMessage());
+        }
+        return 1;
+    }
+
+    public static void upgradeAttribute(String username, String column, int cost) {
+        String updateCoinsSql = "UPDATE store SET coins = coins - ? WHERE username = ?";
+        String upgradeSql = "UPDATE store SET " + column + " = " + column + " + 1 WHERE username = ?";
+
+        try (Connection conn = connect()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement pstmt1 = conn.prepareStatement(updateCoinsSql);
+                 PreparedStatement pstmt2 = conn.prepareStatement(upgradeSql)) {
+
+                pstmt1.setInt(1, cost);
+                pstmt1.setString(2, username);
+                pstmt1.executeUpdate();
+
+                pstmt2.setString(1, username);
+                pstmt2.executeUpdate();
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error upgrading attribute: " + e.getMessage());
         }
     }
 }

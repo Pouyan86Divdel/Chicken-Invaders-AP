@@ -45,6 +45,7 @@ public class GameMain extends JFrame {
 
         add(mainPanel);
         cardLayout.show(mainPanel, "MainMenu");
+        mainMenu.updateMenuUI();
     }
 
     public String getCurrentUsername() {
@@ -59,6 +60,11 @@ public class GameMain extends JFrame {
         return this.gamePanel;
     }
 
+    public void logout() {
+        this.currentUsername = "Guest";
+        changePanel("MainMenu");
+    }
+
     public void changePanel(String panelName) {
         if (panelName.equals("HighScorePanel")) {
             for (Component comp : mainPanel.getComponents()) {
@@ -70,6 +76,14 @@ public class GameMain extends JFrame {
 
         if (panelName.equals("Store")) {
             storePanel.updateStoreUI();
+        }
+
+        if (panelName.equals("MainMenu")) {
+            for (Component comp : mainPanel.getComponents()) {
+                if (comp instanceof MainMenu) {
+                    ((MainMenu) comp).updateMenuUI();
+                }
+            }
         }
 
         cardLayout.show(mainPanel, panelName);

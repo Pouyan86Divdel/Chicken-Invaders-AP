@@ -84,8 +84,8 @@ public class LoginPanel extends JPanel {
             if (loggedIn) {
                 JOptionPane.showMessageDialog(this, "Welcome " + username + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 gameMain.setCurrentUsername(username);
-                gameMain.changePanel("GamePanel");
-                gameMain.getGamePanel().startGame();
+                // هدایت مستقیم کاربر به منوی اصلی به جای صفحه بازی
+                gameMain.changePanel("MainMenu");
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Error", JOptionPane.ERROR_MESSAGE);
             }
